@@ -9,3 +9,14 @@
  
                  for (int i = 0; i < list1.size(); ++i)
                  {
+@@ -334,6 +334,10 @@
+ 
+             if (this.field_145850_b.func_180495_p(this.field_174879_c).func_177230_c() == Blocks.field_180384_M)
+             {
++                // Fix piston ghost blocks
++                IBlockState blockState = this.field_145850_b.func_180495_p(this.field_174879_c);
++                this.field_145850_b.func_184138_a(field_174879_c.func_177972_a(blockState.func_177229_b(BlockPistonExtension.field_176387_N).func_176734_d()), blockState, blockState, 0);
++
+                 this.field_145850_b.func_180501_a(this.field_174879_c, this.field_174932_a, 3);
+                 this.field_145850_b.func_190524_a(this.field_174879_c, this.field_174932_a.func_177230_c(), this.field_174879_c);
+             }
