@@ -1,5 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockObserver.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockObserver.java
+@@ -125,7 +125,7 @@
+ 
+     public IBlockState func_180642_a(World p_180642_1_, BlockPos p_180642_2_, EnumFacing p_180642_3_, float p_180642_4_, float p_180642_5_, float p_180642_6_, int p_180642_7_, EntityLivingBase p_180642_8_)
+     {
+-        return this.func_176223_P().func_177226_a(field_176387_N, EnumFacing.func_190914_a(p_180642_2_, p_180642_8_).func_176734_d());
++        return this.func_176223_P().func_177226_a(field_176387_N, EnumFacing.func_190914_a(p_180642_2_, p_180642_8_).func_176734_d()).func_177226_a(field_190963_a, !p_180642_1_.func_82736_K().func_82766_b("observersPulseOnPlace"));
+     }
+ 
+     public int func_176201_c(IBlockState p_176201_1_)
 @@ -145,4 +145,12 @@
      {
          return this.func_176223_P().func_177226_a(field_176387_N, EnumFacing.func_82600_a(p_176203_1_ & 7));
