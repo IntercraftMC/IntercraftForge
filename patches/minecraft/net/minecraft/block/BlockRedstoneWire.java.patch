@@ -1,6 +1,70 @@
 --- ../src-base/minecraft/net/minecraft/block/BlockRedstoneWire.java
 +++ ../src-work/minecraft/net/minecraft/block/BlockRedstoneWire.java
-@@ -99,15 +99,15 @@
+@@ -2,10 +2,8 @@
+ 
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Sets;
+-import java.util.EnumSet;
+-import java.util.List;
+-import java.util.Random;
+-import java.util.Set;
++
++import java.util.*;
+ import javax.annotation.Nullable;
+ import net.minecraft.block.material.Material;
+ import net.minecraft.block.properties.IProperty;
+@@ -27,13 +25,42 @@
+ import net.minecraft.util.math.AxisAlignedBB;
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.util.math.MathHelper;
++import net.minecraft.util.math.Vec3i;
+ import net.minecraft.world.IBlockAccess;
+ import net.minecraft.world.World;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
++import org.apache.commons.lang3.ArrayUtils;
+ 
+ public class BlockRedstoneWire extends Block
+ {
++    private List<BlockPos> turnOff = Lists.<BlockPos>newArrayList();
++    private List<BlockPos> turnOn = Lists.<BlockPos>newArrayList();
++    private final Set<BlockPos> updatedRedstoneWire = Sets.<BlockPos>newLinkedHashSet();
++
++    public static final EnumFacing[] FACINGS_HORIZONTAL = {EnumFacing.WEST, EnumFacing.EAST, EnumFacing.NORTH, EnumFacing.SOUTH};
++    public static final EnumFacing[] FACINGS_VERTICAL = {EnumFacing.DOWN, EnumFacing.UP};
++    public static final EnumFacing[] FACINGS = ArrayUtils.addAll(FACINGS_VERTICAL, FACINGS_HORIZONTAL);
++
++    /** Offsets for all surrounding blocks that need to receive updates **/
++    private static final Vec3i[] surroundingBlocksOffset;
++    static {
++        Set<Vec3i> set = Sets.<Vec3i> newLinkedHashSet();
++        for (EnumFacing facing : FACINGS) {
++            set.add(facing.func_176730_m());
++        }
++        for (EnumFacing facing1 : FACINGS) {
++            Vec3i v1 = facing1.func_176730_m();
++            for (EnumFacing facing2 : FACINGS) {
++                Vec3i v2 = facing2.func_176730_m();
++                // TODO Adding an add-method to Vec3i would be nicer of course
++                set.add(new Vec3i(v1.func_177958_n() + v2.func_177958_n(), v1.func_177956_o() + v2.func_177956_o(), v1.func_177952_p() + v2.func_177952_p()));
++            }
++        }
++        set.remove(new Vec3i(0, 0, 0));
++        surroundingBlocksOffset = set.toArray(new Vec3i[set.size()]);
++    }
++
+     public static final PropertyEnum<BlockRedstoneWire.EnumAttachPosition> field_176348_a = PropertyEnum.<BlockRedstoneWire.EnumAttachPosition>func_177709_a("north", BlockRedstoneWire.EnumAttachPosition.class);
+     public static final PropertyEnum<BlockRedstoneWire.EnumAttachPosition> field_176347_b = PropertyEnum.<BlockRedstoneWire.EnumAttachPosition>func_177709_a("east", BlockRedstoneWire.EnumAttachPosition.class);
+     public static final PropertyEnum<BlockRedstoneWire.EnumAttachPosition> field_176349_M = PropertyEnum.<BlockRedstoneWire.EnumAttachPosition>func_177709_a("south", BlockRedstoneWire.EnumAttachPosition.class);
+@@ -41,7 +68,6 @@
+     public static final PropertyInteger field_176351_O = PropertyInteger.func_177719_a("power", 0, 15);
+     protected static final AxisAlignedBB[] field_185700_f = new AxisAlignedBB[] {new AxisAlignedBB(0.1875D, 0.0D, 0.1875D, 0.8125D, 0.0625D, 0.8125D), new AxisAlignedBB(0.1875D, 0.0D, 0.1875D, 0.8125D, 0.0625D, 1.0D), new AxisAlignedBB(0.0D, 0.0D, 0.1875D, 0.8125D, 0.0625D, 0.8125D), new AxisAlignedBB(0.0D, 0.0D, 0.1875D, 0.8125D, 0.0625D, 1.0D), new AxisAlignedBB(0.1875D, 0.0D, 0.0D, 0.8125D, 0.0625D, 0.8125D), new AxisAlignedBB(0.1875D, 0.0D, 0.0D, 0.8125D, 0.0625D, 1.0D), new AxisAlignedBB(0.0D, 0.0D, 0.0D, 0.8125D, 0.0625D, 0.8125D), new AxisAlignedBB(0.0D, 0.0D, 0.0D, 0.8125D, 0.0625D, 1.0D), new AxisAlignedBB(0.1875D, 0.0D, 0.1875D, 1.0D, 0.0625D, 0.8125D), new AxisAlignedBB(0.1875D, 0.0D, 0.1875D, 1.0D, 0.0625D, 1.0D), new AxisAlignedBB(0.0D, 0.0D, 0.1875D, 1.0D, 0.0625D, 0.8125D), new AxisAlignedBB(0.0D, 0.0D, 0.1875D, 1.0D, 0.0625D, 1.0D), new AxisAlignedBB(0.1875D, 0.0D, 0.0D, 1.0D, 0.0625D, 0.8125D), new AxisAlignedBB(0.1875D, 0.0D, 0.0D, 1.0D, 0.0625D, 1.0D), new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.0625D, 0.8125D), new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.0625D, 1.0D)};
+     private boolean field_150181_a = true;
+-    private final Set<BlockPos> field_150179_b = Sets.<BlockPos>newHashSet();
+ 
+     public BlockRedstoneWire()
+     {
+@@ -99,15 +125,15 @@
          BlockPos blockpos = p_176341_2_.func_177972_a(p_176341_3_);
          IBlockState iblockstate = p_176341_1_.func_180495_p(p_176341_2_.func_177972_a(p_176341_3_));
  
@@ -19,7 +83,7 @@
                  {
                      if (iblockstate.func_185898_k())
                      {
-@@ -144,7 +144,8 @@
+@@ -144,21 +170,25 @@
  
      public boolean func_176196_c(World p_176196_1_, BlockPos p_176196_2_)
      {
@@ -28,8 +92,73 @@
 +        return downState.func_185896_q() || downState.func_193401_d(p_176196_1_, p_176196_2_.func_177977_b(), EnumFacing.UP) == BlockFaceShape.SOLID || p_176196_1_.func_180495_p(p_176196_2_.func_177977_b()).func_177230_c() == Blocks.field_150426_aN;
      }
  
-     private IBlockState func_176338_e(World p_176338_1_, BlockPos p_176338_2_, IBlockState p_176338_3_)
-@@ -414,7 +415,7 @@
+-    private IBlockState func_176338_e(World p_176338_1_, BlockPos p_176338_2_, IBlockState p_176338_3_)
++    private void updateSurroundingRedstone(World worldIn, BlockPos pos, IBlockState state)
+     {
+-        p_176338_3_ = this.func_176345_a(p_176338_1_, p_176338_2_, p_176338_2_, p_176338_3_);
+-        List<BlockPos> list = Lists.newArrayList(this.field_150179_b);
+-        this.field_150179_b.clear();
++        if (worldIn.func_82736_K().func_82766_b("optimizeRedstone")) {
++            updateSurroundingRedstoneOptimized(worldIn, pos, state);
++            return;
++        }
+ 
++        this.func_176345_a(worldIn, pos, pos, state);
++        List<BlockPos> list = Lists.newArrayList(this.updatedRedstoneWire);
++        this.updatedRedstoneWire.clear();
++
+         for (BlockPos blockpos : list)
+         {
+-            p_176338_1_.func_175685_c(blockpos, this, false);
++            worldIn.func_175685_c(blockpos, this, false);
+         }
+-
+-        return p_176338_3_;
+     }
+ 
+     private IBlockState func_176345_a(World p_176345_1_, BlockPos p_176345_2_, BlockPos p_176345_3_, IBlockState p_176345_4_)
+@@ -228,11 +258,11 @@
+                 p_176345_1_.func_180501_a(p_176345_2_, p_176345_4_, 2);
+             }
+ 
+-            this.field_150179_b.add(p_176345_2_);
++            this.updatedRedstoneWire.add(p_176345_2_);
+ 
+             for (EnumFacing enumfacing1 : EnumFacing.values())
+             {
+-                this.field_150179_b.add(p_176345_2_.func_177972_a(enumfacing1));
++                this.updatedRedstoneWire.add(p_176345_2_.func_177972_a(enumfacing1));
+             }
+         }
+ 
+@@ -256,7 +286,7 @@
+     {
+         if (!p_176213_1_.field_72995_K)
+         {
+-            this.func_176338_e(p_176213_1_, p_176213_2_, p_176213_3_);
++            this.updateSurroundingRedstone(p_176213_1_, p_176213_2_, p_176213_3_);
+ 
+             for (EnumFacing enumfacing : EnumFacing.Plane.VERTICAL)
+             {
+@@ -295,7 +325,7 @@
+                 p_180663_1_.func_175685_c(p_180663_2_.func_177972_a(enumfacing), this, false);
+             }
+ 
+-            this.func_176338_e(p_180663_1_, p_180663_2_, p_180663_3_);
++            this.updateSurroundingRedstone(p_180663_1_, p_180663_2_, p_180663_3_);
+ 
+             for (EnumFacing enumfacing1 : EnumFacing.Plane.HORIZONTAL)
+             {
+@@ -337,7 +367,7 @@
+         {
+             if (this.func_176196_c(p_189540_2_, p_189540_3_))
+             {
+-                this.func_176338_e(p_189540_2_, p_189540_3_, p_189540_1_);
++                this.updateSurroundingRedstone(p_189540_2_, p_189540_3_, p_189540_1_);
+             }
+             else
+             {
+@@ -414,7 +444,7 @@
          {
              return true;
          }
@@ -38,7 +167,7 @@
          {
              return true;
          }
-@@ -430,16 +431,11 @@
+@@ -430,16 +460,11 @@
  
      protected static boolean func_176340_e(IBlockAccess p_176340_0_, BlockPos p_176340_1_)
      {
@@ -57,7 +186,7 @@
          Block block = p_176343_0_.func_177230_c();
  
          if (block == Blocks.field_150488_af)
-@@ -457,7 +453,7 @@
+@@ -457,7 +482,7 @@
          }
          else
          {
@@ -66,3 +195,326 @@
          }
      }
  
+@@ -596,4 +621,322 @@
+             return this.field_176820_d;
+         }
+     }
++
++    /**
++     * Redstone Wire Optimization
++     *
++     * Original 1.10 implementation by panda4994
++     * https://www.youtube.com/user/Panda4994
++     */
++
++    private void updateSurroundingRedstoneOptimized(World worldIn, BlockPos pos, IBlockState state)
++    {
++        // Recalculate the connected wires
++        calculateCurrentChangesOptimized(worldIn, pos);
++
++        // Set to collect all the updates, to only execute them once. Ordering required.
++        Set<BlockPos> blocksNeedingUpdate = Sets.newLinkedHashSet();
++
++        // Add the needed updates
++        for (BlockPos posi : updatedRedstoneWire) {
++            addBlocksNeedingUpdate(worldIn, posi, blocksNeedingUpdate);
++        }
++
++        // Add all other updates to keep known behaviors
++        // They are added in a backwards order because it preserves a commonly used behavior with the update order
++        Iterator<BlockPos> it = Lists.<BlockPos>newLinkedList(updatedRedstoneWire).descendingIterator();
++        while (it.hasNext()) {
++            addAllSurroundingBlocks(it.next(), blocksNeedingUpdate);
++        }
++
++        // Remove updates on the wires as they just were updated
++        blocksNeedingUpdate.removeAll(updatedRedstoneWire);
++
++        /* Avoid unnecessary updates on the just updated wires
++         * A huge scale test showed about 40% more ticks per second
++         * It's probably less in normal usage but likely still worth it
++         */
++        updatedRedstoneWire.clear();
++
++        // Execute updates
++        for (BlockPos posi : blocksNeedingUpdate) {
++            worldIn.func_190524_a(posi, this, pos);
++        }
++    }
++
++    private void calculateCurrentChangesOptimized(World worldIn, BlockPos pos1)
++    {
++        if (worldIn.func_180495_p(pos1).func_177230_c() == this) {
++            turnOff.add(pos1);
++        } else {
++            checkSurroundingWires(worldIn, pos1);
++        }
++
++        IBlockState state;
++        while (!turnOff.isEmpty()) {
++            BlockPos pos = turnOff.remove(0);
++            state = worldIn.func_180495_p(pos);
++            int oldPower = ((Integer)state.func_177229_b(field_176351_O)).intValue();
++            this.field_150181_a = false;
++            int blockPower = worldIn.func_175687_A(pos);
++            this.field_150181_a = true;
++            int wirePower = getSurroundingWirePower(worldIn, pos);
++            // Lower the strength as it moved a block
++            wirePower--;
++            int newPower = Math.max(blockPower, wirePower);
++
++            // Power lowered?
++            if (newPower < oldPower) {
++                // If it's still powered by a direct source (but weaker) mark for turn on
++                if (blockPower > 0 && !turnOn.contains(pos)) {
++                    turnOn.add(pos);
++                }
++                // Set all the way to off for now, because wires that were powered by this need to update first
++                setWireState(worldIn, pos, state, 0);
++                // Power rose?
++            } else if (newPower > oldPower) {
++                // Set new Power
++                setWireState(worldIn, pos, state, newPower);
++            }
++            // Check if surrounding wires need to change based on the current/new state and add them to the lists
++            checkSurroundingWires(worldIn, pos);
++        }
++        // Now all needed wires are turned off. Time to turn them on again if there is a power source.
++        while (!turnOn.isEmpty()) {
++            BlockPos pos = turnOn.remove(0);
++            state = worldIn.func_180495_p(pos);
++            int oldPower = ((Integer)state.func_177229_b(field_176351_O)).intValue();
++            this.field_150181_a = false;
++            int blockPower = worldIn.func_175687_A(pos);
++            this.field_150181_a = true;
++            int wirePower = getSurroundingWirePower(worldIn, pos);
++            // Lower the strength as it moved a block
++            wirePower--;
++            int newPower = Math.max(blockPower, wirePower);
++
++            if (newPower > oldPower) {
++                setWireState(worldIn, pos, state, newPower);
++            } else if (newPower < oldPower) {
++                // Add warning
++            }
++            // Check if surrounding wires need to change based on the current/new state and add them to the lists
++            checkSurroundingWires(worldIn, pos);
++        }
++        turnOff.clear();
++        turnOn.clear();
++    }
++
++    /**
++     * Checks if an wire needs to be marked for update depending on the power next to it
++     *
++     * @author panda
++     *
++     * @param worldIn	World
++     * @param pos		Position of the wire that might need to change
++     * @param otherPower	Power of the wire next to it
++     */
++    private void addWireToList(World worldIn, BlockPos pos, int otherPower) {
++        IBlockState state = worldIn.func_180495_p(pos);
++        if (state.func_177230_c() == this) {
++            int power = ((Integer)state.func_177229_b(field_176351_O)).intValue();
++            // Could get powered stronger by the neighbor?
++            if (power < (otherPower-1) && !turnOn.contains(pos)) {
++                // Mark for turn on check.
++                turnOn.add(pos);
++            }
++            // Should have powered the neighbor? Probably was powered by it and is in turn off phase.
++            if (power > otherPower && !turnOff.contains(pos)) {
++                // Mark for turn off check.
++                turnOff.add(pos);
++            }
++        }
++    }
++
++    /**
++     * Checks if the wires around need to get updated depending on this wires state.
++     * Checks all wires below before the same layer before on top to keep
++     * some more rotational symmetry around the y-axis.
++     *
++     * @author panda
++     *
++     * @param worldIn		World
++     * @param pos			Position of the wire
++     */
++    private void checkSurroundingWires(World worldIn, BlockPos pos) {
++        IBlockState state = worldIn.func_180495_p(pos);
++        int ownPower = 0;
++        if (state.func_177230_c() == this) {
++            ownPower = ((Integer)state.func_177229_b(field_176351_O)).intValue();
++        }
++        // Check wires on the same layer first as they appear closer to the wire
++        for (EnumFacing facing : FACINGS_HORIZONTAL) {
++            BlockPos offsetPos = pos.func_177972_a(facing);
++            if (facing.func_176740_k().func_176722_c()) {
++                addWireToList(worldIn, offsetPos, ownPower);
++            }
++        }
++        for (EnumFacing facingVertical : FACINGS_VERTICAL) {
++            BlockPos offsetPos = pos.func_177972_a(facingVertical);
++            boolean solidBlock = worldIn.func_180495_p(offsetPos).func_185898_k();
++            for (EnumFacing facingHorizontal : FACINGS_HORIZONTAL) {
++                // wire can travel upwards if the block on top doesn't cut the wire (is non-solid)
++                // it can travel down if the block below is solid and the block "diagonal" doesn't cut off the wire (is non-solid)
++                if ((facingVertical == EnumFacing.UP && !solidBlock) || (facingVertical == EnumFacing.DOWN && solidBlock && !worldIn.func_180495_p(offsetPos.func_177972_a(facingHorizontal)).func_185898_k())) {
++                    addWireToList(worldIn, offsetPos.func_177972_a(facingHorizontal), ownPower);
++                }
++            }
++        }
++    }
++
++    /**
++     * Gets the maximum power of the surrounding wires
++     *
++     * @author panda
++     *
++     * @param worldIn	World
++     * @param pos		Position of the asking wire
++     * @return			The maximum power of the wires that could power the wire at pos
++     */
++    private int getSurroundingWirePower(World worldIn, BlockPos pos) {
++        int wirePower = 0;
++        for(EnumFacing enumfacing : EnumFacing.Plane.HORIZONTAL) {
++            BlockPos offsetPos = pos.func_177972_a(enumfacing);
++            // Wires on the same layer
++            wirePower = this.func_176342_a(worldIn, offsetPos, wirePower);
++
++            // Block below the wire need to be solid (Upwards diode of slabs/stairs/glowstone) and no block should cut the wire
++            if(worldIn.func_180495_p(offsetPos).func_185915_l() && !worldIn.func_180495_p(pos.func_177984_a()).func_185915_l()) {
++                wirePower = this.func_176342_a(worldIn, offsetPos.func_177984_a(), wirePower);
++                // Only get from power below if no block is cutting the wire
++            } else if(!worldIn.func_180495_p(offsetPos).func_185915_l()) {
++                wirePower = this.func_176342_a(worldIn, offsetPos.func_177977_b(), wirePower);
++            }
++        }
++        return wirePower;
++    }
++
++    /**
++     * Adds all blocks that need to receive an update from a redstone change in this position.
++     * This means only blocks that actually could change.
++     *
++     * @author panda
++     *
++     * @param worldIn	World
++     * @param pos		Position of the wire
++     * @param set		Set to add the update positions too
++     */
++    private void addBlocksNeedingUpdate(World worldIn, BlockPos pos, Set<BlockPos> set) {
++        List<EnumFacing> connectedSides = getSidesToPower(worldIn, pos);
++        BlockPos offsetPos2;
++        // Add the blocks next to the wire first (closest first order)
++        for (EnumFacing facing : FACINGS) {
++            BlockPos offsetPos = pos.func_177972_a(facing);
++            // canConnectTo() is not the nicest solution here as it returns true for e.g. the front of a repeater
++            // canBlockBePowereFromSide catches these cases
++            //canConnectTo(iblockstate, side, worldIn, pos)
++            if (connectedSides.contains(facing.func_176734_d()) || facing == EnumFacing.DOWN || (facing.func_176740_k().func_176722_c() && canConnectTo(worldIn.func_180495_p(offsetPos), facing, null, null))) {
++                if (canBlockBePoweredFromSide(worldIn.func_180495_p(offsetPos), facing, true)) set.add(offsetPos);
++            }
++        }
++        // Later add blocks around the surrounding blocks that get powered
++        for (EnumFacing facing : FACINGS) {
++            BlockPos offsetPos = pos.func_177972_a(facing);
++            if (connectedSides.contains(facing.func_176734_d()) || facing == EnumFacing.DOWN) {
++                if (worldIn.func_180495_p(offsetPos).func_185915_l()) {
++                    for (EnumFacing facing1 : FACINGS) {
++                        if (canBlockBePoweredFromSide(worldIn.func_180495_p(offsetPos.func_177972_a(facing1)), facing1, false)) set.add(offsetPos.func_177972_a(facing1));
++                    }
++                }
++            }
++        }
++    }
++
++    /**
++     * Checks if a block can get powered from a side.
++     * This behavior would better be implemented per block type as follows:
++     *  - return false as default. (blocks that are not affected by redstone don't need to be updated, it doesn't really hurt if they are either)
++     *  - return true for all blocks that can get powered from all side and change based on it (doors, fence gates, trap doors, note blocks, lamps, dropper, hopper, TNT, rails, possibly more)
++     *  - implement own logic for pistons, repeaters, comparators and redstone torches
++     *  The current implementation was chosen to keep everything in one class.
++     *
++     *  Why is this extra check needed?
++     *  1. It makes sure that many old behaviors still work (QC + Pistons).
++     *  2. It prevents updates from "jumping".
++     *     Or rather it prevents this wire to update a block that would get powered by the next one of the same line.
++     *     This is to prefer as it makes understanding the update order of the wire really easy. The signal "travels" from the power source.
++     *
++     * @author panda
++     *
++     * @param state		State of the block
++     * @param side		Side from which it gets powered
++     * @param isWire		True if it's powered by a wire directly, False if through a block
++     * @return			True if the block can change based on the power level it gets on the given side, false otherwise
++     */
++    private boolean canBlockBePoweredFromSide(IBlockState state, EnumFacing side, boolean isWire) {
++        if (state.func_177230_c() instanceof BlockPistonBase && state.func_177229_b(BlockPistonBase.field_176387_N) == side.func_176734_d()) return false;
++        if (state.func_177230_c() instanceof BlockRedstoneDiode && state.func_177229_b(BlockRedstoneDiode.field_185512_D) != side.func_176734_d()) {
++            if (isWire && state.func_177230_c() instanceof BlockRedstoneComparator && state.func_177229_b(BlockRedstoneComparator.field_185512_D).func_176740_k() != side.func_176740_k() && side.func_176740_k().func_176722_c()) return true;
++            return false;
++        }
++        if (state.func_177230_c() instanceof BlockRedstoneTorch) {
++            if (isWire || state.func_177229_b(BlockRedstoneTorch.field_176596_a) != side) return false;
++        }
++        return true;
++    }
++
++    /**
++     * Creates a list of all horizontal sides that can get powered by a wire.
++     * The list is ordered the same as the facingsHorizontal.
++     *
++     * @param worldIn	World
++     * @param pos		Position of the wire
++     * @return			List of all facings that can get powered by this wire
++     */
++    private List<EnumFacing> getSidesToPower(World worldIn, BlockPos pos) {
++        List retval = Lists.<EnumFacing>newArrayList();
++        for (EnumFacing facing : FACINGS_HORIZONTAL) {
++            if (func_176339_d(worldIn, pos, facing)) retval.add(facing);
++        }
++        if (retval.isEmpty()) return Lists.<EnumFacing>newArrayList(FACINGS_HORIZONTAL);
++        boolean northsouth = retval.contains(EnumFacing.NORTH) || retval.contains(EnumFacing.SOUTH);
++        boolean eastwest = retval.contains(EnumFacing.EAST) || retval.contains(EnumFacing.WEST);
++        if (northsouth) {
++            retval.remove(EnumFacing.EAST);
++            retval.remove(EnumFacing.WEST);
++        }
++        if (eastwest) {
++            retval.remove(EnumFacing.NORTH);
++            retval.remove(EnumFacing.SOUTH);
++        }
++        return retval;
++    }
++
++    /**
++     * Adds all surrounding positions to a set.
++     * This is the neighbor blocks, as well as their neighbors
++     *
++     * @param pos
++     * @param set
++     */
++    private void addAllSurroundingBlocks(BlockPos pos, Set<BlockPos> set) {
++        for (Vec3i vect : surroundingBlocksOffset) {
++            set.add(pos.func_177971_a(vect));
++        }
++    }
++
++    /**
++     * Sets the block state of a wire with a new power level and marks for updates
++     *
++     * @author panda
++     *
++     * @param worldIn	World
++     * @param pos		Position at which the state needs to be set
++     * @param state		Old state
++     * @param power		Power it should get set to
++     */
++    private void setWireState(World worldIn, BlockPos pos, IBlockState state, int power) {
++        state = state.func_177226_a(field_176351_O, Integer.valueOf(power));
++        worldIn.func_180501_a(pos, state, 2);
++        updatedRedstoneWire.add(pos);
++    }
+ }
