@@ -412,7 +412,7 @@
 +            // canConnectTo() is not the nicest solution here as it returns true for e.g. the front of a repeater
 +            // canBlockBePowereFromSide catches these cases
 +            //canConnectTo(iblockstate, side, worldIn, pos)
-+            if (connectedSides.contains(facing.func_176734_d()) || facing == EnumFacing.DOWN || (facing.func_176740_k().func_176722_c() && canConnectTo(worldIn.func_180495_p(offsetPos), facing, null, null))) {
++            if (connectedSides.contains(facing.func_176734_d()) || facing == EnumFacing.DOWN || (facing.func_176740_k().func_176722_c() && canConnectTo(worldIn.func_180495_p(offsetPos), facing, worldIn, pos))) {
 +                if (canBlockBePoweredFromSide(worldIn.func_180495_p(offsetPos), facing, true)) set.add(offsetPos);
 +            }
 +        }
