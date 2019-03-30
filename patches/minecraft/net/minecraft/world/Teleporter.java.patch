@@ -68,7 +68,7 @@
  
          return true;
      }
-@@ -428,4 +437,139 @@
+@@ -428,4 +437,121 @@
              this.field_85087_d = p_i45747_3_;
          }
      }
@@ -84,58 +84,40 @@
 +
 +    public boolean placeInExistingPortalOptimized(Entity entityIn, float rotationYaw)
 +    {
-+        int i = 128;
 +        double d0;
 +        double d1;
 +        int j = MathHelper.func_76128_c(entityIn.field_70165_t);
 +        int k = MathHelper.func_76128_c(entityIn.field_70161_v);
-+        boolean flag = true;
 +        BlockPos blockpos = null;
-+        long l = ChunkPos.func_77272_a(j, k);
 +        BlockPos entityPos = new BlockPos(entityIn);
 +
-+        if (this.field_85191_c.containsKey(l))
-+        {
-+            Teleporter.PortalPosition teleporter$portalposition = (Teleporter.PortalPosition)this.field_85191_c.get(l);
-+            d0 = 0.0D;
-+            blockpos = teleporter$portalposition;
-+            teleporter$portalposition.field_85087_d = this.field_85192_a.func_82737_E();
-+            flag = false;
-+        }
-+        else
-+        {
-+            do {
-+                d0 = 1048577D; // Maximum portal teleportation distance + 1
-+                for (BlockPos pos : this.field_85192_a.netherPortalCollection.getPortals()) {
-+                    d1 = pos.func_177951_i(entityPos);
-+                    if (d1 < d0 && pos.func_177956_o() < this.field_85192_a.func_72940_L() - 1) {
-+                        d0 = d1;
-+                        blockpos = pos;
-+                    }
++        do {
++            if (blockpos != null) {
++                // The portal block was not found, so it needs to be removed.
++                this.field_85192_a.netherPortalCollection.remove(blockpos);
++            }
++            d0 = 16385D; // Maximum portal teleportation distance + 1
++            for (BlockPos pos : this.field_85192_a.netherPortalCollection.getPortals()) {
++                d1 = pos.func_177951_i(entityPos);
++                if (d1 < d0 && pos.func_177956_o() < this.field_85192_a.func_72940_L() - 1) {
++                    d0 = d1;
++                    blockpos = pos;
 +                }
-+                if (blockpos != null && this.field_85192_a.func_180495_p(blockpos).func_177230_c() != Blocks.field_150427_aO) {
-+                    this.field_85192_a.netherPortalCollection.remove(blockpos);
-+                    blockpos = null;
-+                }
-+            } while (blockpos == null && this.field_85192_a.netherPortalCollection.getPortals().size() > 0);
-+        }
++            }
++        } while (blockpos != null && this.field_85192_a.func_180495_p(blockpos).func_177230_c() != Blocks.field_150427_aO);
 +
 +        if (blockpos != null) {
-+            if (flag) {
-+                this.field_85191_c.put(l, new Teleporter.PortalPosition(blockpos, this.field_85192_a.func_82737_E()));
++            // After locating the nearest portal, find the nearest portal block to teleport to in order to retain as much vanilla behavior as possible.
++            EnumFacing.Axis axis = (EnumFacing.Axis) this.field_85192_a.func_180495_p(blockpos).func_177228_b().get(BlockPortal.field_176550_a);
++            EnumFacing facing;
++            if (axis == EnumFacing.Axis.X) {
++                facing = EnumFacing.func_181076_a(blockpos.func_177958_n() - entityIn.field_70165_t >= 0 ? EnumFacing.AxisDirection.NEGATIVE : EnumFacing.AxisDirection.POSITIVE, axis);
 +            } else {
-+                // After locating the nearest portal, find the nearest portal block to teleport to in order to retain as much vanilla behavior as possible.
-+                EnumFacing.Axis axis = (EnumFacing.Axis) this.field_85192_a.func_180495_p(blockpos).func_177228_b().get(BlockPortal.field_176550_a);
-+                EnumFacing facing;
-+                if (axis == EnumFacing.Axis.X) {
-+                    facing = EnumFacing.func_181076_a(blockpos.func_177958_n() - entityIn.field_70165_t >= 0 ? EnumFacing.AxisDirection.NEGATIVE : EnumFacing.AxisDirection.POSITIVE, axis);
-+                } else {
-+                    facing = EnumFacing.func_181076_a(blockpos.func_177952_p() - entityIn.field_70161_v >= 0 ? EnumFacing.AxisDirection.NEGATIVE : EnumFacing.AxisDirection.POSITIVE, axis);
-+                }
-+                for (BlockPos newPos = blockpos.func_177972_a(facing); (d1 = newPos.func_177951_i(entityPos)) < d0; newPos = newPos.func_177972_a(facing)) {
-+                    blockpos = newPos;
-+                    d0 = d1;
-+                }
++                facing = EnumFacing.func_181076_a(blockpos.func_177952_p() - entityIn.field_70161_v >= 0 ? EnumFacing.AxisDirection.NEGATIVE : EnumFacing.AxisDirection.POSITIVE, axis);
++            }
++            for (BlockPos newPos = blockpos.func_177972_a(facing); this.field_85192_a.func_180495_p(newPos).func_177230_c() == Blocks.field_150427_aO && (d1 = newPos.func_177951_i(entityPos)) < d0; newPos = newPos.func_177972_a(facing)) {
++                blockpos = newPos;
++                d0 = d1;
 +            }
 +
 +            double d5 = (double)blockpos.func_177958_n() + 0.5D;

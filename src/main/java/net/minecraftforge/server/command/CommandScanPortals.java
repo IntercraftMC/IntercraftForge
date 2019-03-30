@@ -91,6 +91,7 @@ public class CommandScanPortals extends CommandBase {
         public boolean scanning = false;
 
         public PortalScanner(MinecraftServer server) {
+            super("Portal Scanner");
             this.server = server;
         }
 
@@ -174,7 +175,7 @@ public class CommandScanPortals extends CommandBase {
             int i;
             WorldPortalScanner[] threads = new WorldPortalScanner[regions.length];
             for (i = 0; i < threads.length; i++) {
-                threads[i] = new WorldPortalScanner(regions[i]);
+                threads[i] = new WorldPortalScanner(worlds[i].provider.getDimension(), regions[i]);
                 threads[i].start();
             }
 
@@ -200,8 +201,9 @@ public class CommandScanPortals extends CommandBase {
         private File regions;
         public HashSet<BlockPos> portals = new HashSet<>();
 
-        public WorldPortalScanner(File regions)
+        public WorldPortalScanner(Integer dimension, File regions)
         {
+            super("World Portal Scanner: " + dimension.toString());
             this.regions = regions;
         }
 
@@ -258,7 +260,7 @@ public class CommandScanPortals extends CommandBase {
                     int i1 = blockIdExtension == null ? 0 : blockIdExtension.get(j, k, l);
                     int j1 = i1 << 12 | (blockIds[i] & 255) << 4 | data.get(j, k, l);
                     IBlockState blockState = Block.BLOCK_STATE_IDS.getByValue(j1);
-                    if (blockState.getBlock() == Blocks.PORTAL) {
+                    if (blockState != null && blockState.getBlock() == Blocks.PORTAL) {
                         BlockPos pos = new BlockPos((x << 4) | (i & 0xf), (subchunk << 4) | (i >> 8), (z << 4) | ((i >> 4) & 0xf));
                         portalBlocks.put(pos, new PortalBlock(pos, (EnumFacing.Axis) blockState.getProperties().get(BlockPortal.AXIS)));
                     }
