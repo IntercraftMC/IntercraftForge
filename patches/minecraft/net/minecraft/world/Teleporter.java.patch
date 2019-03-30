@@ -68,7 +68,7 @@
  
          return true;
      }
-@@ -428,4 +437,121 @@
+@@ -428,4 +437,122 @@
              this.field_85087_d = p_i45747_3_;
          }
      }
@@ -95,6 +95,7 @@
 +            if (blockpos != null) {
 +                // The portal block was not found, so it needs to be removed.
 +                this.field_85192_a.netherPortalCollection.remove(blockpos);
++                blockpos = null;
 +            }
 +            d0 = 16385D; // Maximum portal teleportation distance + 1
 +            for (BlockPos pos : this.field_85192_a.netherPortalCollection.getPortals()) {
