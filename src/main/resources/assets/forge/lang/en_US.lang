@@ -21,6 +21,7 @@ commands.forge.setdim.invalid.dim=The dimension ID specified (%d) is not valid.
 commands.forge.setdim.invalid.nochange=The entity selected (%s) is already in the dimension specified (%d).
 commands.forge.dimensions.usage=Use /forge dimensions
 commands.forge.dimensions.list=Currently registered dimensions by type:
+commands.forge.scanportals.usage=Use /forge scanportals [complete]
 
 commands.forge.tracking.te.enabled=Tile Entity tracking enabled for %d seconds.
 commands.forge.tracking.entity.enabled=Entity tracking enabled for %d seconds.

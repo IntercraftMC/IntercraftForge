@@ -8,7 +8,15 @@
  import net.minecraft.init.Blocks;
  import net.minecraft.init.SoundEvents;
  import net.minecraft.item.ItemMonsterPlacer;
-@@ -74,11 +75,17 @@
+@@ -27,6 +28,7 @@
+ import net.minecraft.util.math.BlockPos;
+ import net.minecraft.world.IBlockAccess;
+ import net.minecraft.world.World;
++import net.minecraft.world.WorldServer;
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
+ 
+@@ -74,11 +76,17 @@
  
              if (i > 0 && !p_180650_1_.func_180495_p(blockpos.func_177984_a()).func_185915_l())
              {
@@ -31,7 +39,7 @@
                  }
              }
          }
-@@ -111,7 +118,7 @@
+@@ -111,18 +119,26 @@
      {
          BlockPortal.Size blockportal$size = new BlockPortal.Size(p_176548_1_, p_176548_2_, EnumFacing.Axis.X);
  
@@ -39,8 +47,13 @@
 +        if (blockportal$size.func_150860_b() && blockportal$size.field_150864_e == 0 && !net.minecraftforge.event.ForgeEventFactory.onTrySpawnPortal(p_176548_1_, p_176548_2_, blockportal$size))
          {
              blockportal$size.func_150859_c();
++            if (p_176548_1_ instanceof WorldServer) {
++                BlockPos middleBlock = blockportal$size.getMiddle();
++                ((WorldServer) p_176548_1_).netherPortalCollection.add(middleBlock);
++            }
              return true;
-@@ -120,7 +127,7 @@
+         }
+         else
          {
              BlockPortal.Size blockportal$size1 = new BlockPortal.Size(p_176548_1_, p_176548_2_, EnumFacing.Axis.Z);
  
@@ -48,4 +61,45 @@
 +            if (blockportal$size1.func_150860_b() && blockportal$size1.field_150864_e == 0 && !net.minecraftforge.event.ForgeEventFactory.onTrySpawnPortal(p_176548_1_, p_176548_2_, blockportal$size1))
              {
                  blockportal$size1.func_150859_c();
++                if (p_176548_1_ instanceof WorldServer) {
++                    BlockPos middleBlock = blockportal$size1.getMiddle();
++                    ((WorldServer) p_176548_1_).netherPortalCollection.add(middleBlock);
++                }
                  return true;
+             }
+             else
+@@ -143,6 +159,7 @@
+             if (!blockportal$size.func_150860_b() || blockportal$size.field_150864_e < blockportal$size.field_150868_h * blockportal$size.field_150862_g)
+             {
+                 p_189540_2_.func_175656_a(p_189540_3_, Blocks.field_150350_a.func_176223_P());
++                p_189540_2_.netherPortalCollection.remove(p_189540_3_);
+             }
+         }
+         else if (enumfacing$axis == EnumFacing.Axis.Z)
+@@ -152,10 +169,17 @@
+             if (!blockportal$size1.func_150860_b() || blockportal$size1.field_150864_e < blockportal$size1.field_150868_h * blockportal$size1.field_150862_g)
+             {
+                 p_189540_2_.func_175656_a(p_189540_3_, Blocks.field_150350_a.func_176223_P());
++                p_189540_2_.netherPortalCollection.remove(p_189540_3_);
+             }
+         }
+     }
+ 
++    @Override
++    public void func_180663_b(World worldIn, BlockPos pos, IBlockState state) {
++        super.func_180663_b(worldIn, pos, state);
++        worldIn.netherPortalCollection.remove(pos);
++    }
++
+     @SideOnly(Side.CLIENT)
+     public boolean func_176225_a(IBlockState p_176225_1_, IBlockAccess p_176225_2_, BlockPos p_176225_3_, EnumFacing p_176225_4_)
+     {
+@@ -440,6 +464,8 @@
+                 return this.field_150868_h;
+             }
+ 
++            public BlockPos getMiddle() { return this.field_150861_f.func_177967_a(this.field_150866_c, this.field_150868_h/2); }
++
+             protected int func_150858_a()
+             {
+                 label56:
