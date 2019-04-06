@@ -1,6 +1,6 @@
 --- ../src-base/minecraft/net/minecraft/world/GameRules.java
 +++ ../src-work/minecraft/net/minecraft/world/GameRules.java
-@@ -34,6 +34,11 @@
+@@ -34,6 +34,12 @@
          this.func_180262_a("maxCommandChainLength", "65536", GameRules.ValueType.NUMERICAL_VALUE);
          this.func_180262_a("announceAdvancements", "true", GameRules.ValueType.BOOLEAN_VALUE);
          this.func_180262_a("gameLoopFunction", "-", GameRules.ValueType.FUNCTION);
@@ -9,6 +9,7 @@
 +        this.func_180262_a("observersPulseOnPlace", "true", ValueType.BOOLEAN_VALUE);
 +        this.func_180262_a("optimizeRedstone", "false", ValueType.BOOLEAN_VALUE);
 +        this.func_180262_a("optimizePortals", "false", ValueType.BOOLEAN_VALUE);
++        this.func_180262_a("disableMinSpawnDistance", "false", ValueType.BOOLEAN_VALUE);
      }
  
      public void func_180262_a(String p_180262_1_, String p_180262_2_, GameRules.ValueType p_180262_3_)
