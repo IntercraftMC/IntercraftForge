@@ -1,5 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/entity/item/EntityFallingBlock.java
 +++ ../src-work/minecraft/net/minecraft/entity/item/EntityFallingBlock.java
+@@ -53,7 +53,7 @@
+     {
+         super(p_i45848_1_);
+         this.field_175132_d = p_i45848_8_;
+-        this.field_70156_m = true;
++        this.field_70156_m = false; // Restore vanilla behavior
+         this.func_70105_a(0.98F, 0.98F);
+         this.func_70107_b(p_i45848_2_, p_i45848_4_ + (double)((1.0F - this.field_70131_O) / 2.0F), p_i45848_6_);
+         this.field_70159_w = 0.0D;
 @@ -166,6 +166,7 @@
                  {
                      IBlockState iblockstate = this.field_70170_p.func_180495_p(blockpos1);

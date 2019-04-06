@@ -1,5 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/entity/item/EntityBoat.java
 +++ ../src-work/minecraft/net/minecraft/entity/item/EntityBoat.java
+@@ -68,7 +68,7 @@
+     {
+         super(p_i1704_1_);
+         this.field_184470_f = new float[2];
+-        this.field_70156_m = true;
++        this.field_70156_m = false; // Restore vanilla behavior
+         this.func_70105_a(1.375F, 0.5625F);
+     }
+ 
 @@ -508,7 +508,7 @@
  
                                  if (!list.isEmpty())

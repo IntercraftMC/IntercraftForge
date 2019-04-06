@@ -8,6 +8,15 @@
      protected static final DataParameter<Byte> field_184621_as = EntityDataManager.<Byte>func_187226_a(EntityLivingBase.class, DataSerializers.field_187191_a);
      private static final DataParameter<Float> field_184632_c = EntityDataManager.<Float>func_187226_a(EntityLivingBase.class, DataSerializers.field_187193_c);
      private static final DataParameter<Integer> field_184633_f = EntityDataManager.<Integer>func_187226_a(EntityLivingBase.class, DataSerializers.field_187192_b);
+@@ -163,7 +164,7 @@
+         super(p_i1594_1_);
+         this.func_110147_ax();
+         this.func_70606_j(this.func_110138_aP());
+-        this.field_70156_m = true;
++        this.field_70156_m = false; // Restore vanilla behavior
+         this.field_70770_ap = (float)((Math.random() + 1.0D) * 0.009999999776482582D);
+         this.func_70107_b(this.field_70165_t, this.field_70163_u, this.field_70161_v);
+         this.field_70769_ao = (float)Math.random() * 12398.0F;
 @@ -188,6 +189,7 @@
          this.func_110140_aT().func_111150_b(SharedMonsterAttributes.field_111263_d);
          this.func_110140_aT().func_111150_b(SharedMonsterAttributes.field_188791_g);
