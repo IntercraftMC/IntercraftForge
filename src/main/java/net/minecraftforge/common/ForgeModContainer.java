@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import net.minecraftforge.server.command.spawnutils.SpawnUtilsCommand;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -546,6 +547,7 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
     public void serverStarting(FMLServerStartingEvent evt)
     {
         evt.registerServerCommand(new ForgeCommand());
+        evt.registerServerCommand(new SpawnUtilsCommand());
     }
 
     @Subscribe
