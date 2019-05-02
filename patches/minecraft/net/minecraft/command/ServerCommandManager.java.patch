@@ -1,0 +1,21 @@
+--- ../src-base/minecraft/net/minecraft/command/ServerCommandManager.java
++++ ../src-work/minecraft/net/minecraft/command/ServerCommandManager.java
+@@ -32,6 +32,8 @@
+ import net.minecraft.util.text.ITextComponent;
+ import net.minecraft.util.text.TextComponentTranslation;
+ import net.minecraft.util.text.TextFormatting;
++import net.minecraftforge.server.cubitick.command.CommandTickrate;
++import net.minecraftforge.server.cubitick.command.CommandTicksync;
+ 
+ public class ServerCommandManager extends CommandHandler implements ICommandListener
+ {
+@@ -90,6 +92,9 @@
+         this.func_71560_a(new CommandReload());
+         this.func_71560_a(new CommandFunction());
+ 
++        this.func_71560_a(new CommandTickrate());
++        this.func_71560_a(new CommandTicksync());
++
+         if (p_i46985_1_.func_71262_S())
+         {
+             this.func_71560_a(new CommandOp());
