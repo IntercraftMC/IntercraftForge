@@ -56,7 +56,6 @@ public class Cubitick {
 
     public static void setTickWorldServer(float rate)
     {
-        System.out.println("Setting Server Tickrate: " + rate);
         tickrateWorld = rate;
         changeClientTickrate();
     }
