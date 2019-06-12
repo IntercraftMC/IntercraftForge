@@ -1,6 +1,81 @@
 --- ../src-base/minecraft/net/minecraft/tileentity/TileEntityHopper.java
 +++ ../src-work/minecraft/net/minecraft/tileentity/TileEntityHopper.java
-@@ -191,6 +191,7 @@
+@@ -2,6 +2,8 @@
+ 
+ import java.util.List;
+ import javax.annotation.Nullable;
++
++import carpet.helpers.TileEntityOptimizer.ILazyTileEntity;
+ import net.minecraft.block.Block;
+ import net.minecraft.block.BlockChest;
+ import net.minecraft.block.BlockHopper;
+@@ -28,12 +30,16 @@
+ import net.minecraft.util.math.MathHelper;
+ import net.minecraft.world.World;
+ 
+-public class TileEntityHopper extends TileEntityLockableLoot implements IHopper, ITickable
++public class TileEntityHopper extends TileEntityLockableLoot implements IHopper, ITickable, ILazyTileEntity
+ {
+     private NonNullList<ItemStack> field_145900_a = NonNullList.<ItemStack>func_191197_a(5, ItemStack.field_190927_a);
+     private int field_145901_j = -1;
+     private long field_190578_g;
+ 
++    // CARPET-optimizedTileEntities
++    private boolean pullSleeping = false;
++    private boolean pushSleeping = false;
++
+     public static void func_189683_a(DataFixer p_189683_0_)
+     {
+         p_189683_0_.func_188258_a(FixTypes.BLOCK_ENTITY, new ItemStackDataLists(TileEntityHopper.class, new String[] {"Items"}));
+@@ -132,14 +138,42 @@
+             {
+                 boolean flag = false;
+ 
+-                if (!this.func_152104_k())
++                if (!this.field_145850_b.func_82736_K().func_82766_b("optimizeTileEntities"))
+                 {
+-                    flag = this.func_145883_k();
+-                }
++                    if (!this.func_152104_k())
++                    {
++                        flag = this.func_145883_k();
++                    }
+ 
+-                if (!this.func_152105_l())
++                    if (!this.func_152105_l())
++                    {
++                        flag = func_145891_a(this) || flag;
++                    }
++                }
++                else
+                 {
+-                    flag = func_145891_a(this) || flag;
++                    if (!this.pushSleeping)
++                    {
++                        if (!this.func_152104_k())
++                        {
++                            flag = this.func_145883_k();
++                        }
++                        else
++                        {
++                            this.pushSleeping = true; // push falls asleep if the hopper is empty
++                        }
++                    }
++                    if (!this.pullSleeping)
++                    {
++                        if (!this.func_152105_l())
++                        {
++                            flag = func_145891_a(this) || flag;
++                        }
++                        else
++                        {
++                            this.pullSleeping = true; // pull falls asleep if the hopper is full
++                        }
++                    }
+                 }
+ 
+                 if (flag)
+@@ -191,10 +225,12 @@
  
      private boolean func_145883_k()
      {
@@ -8,16 +83,64 @@
          IInventory iinventory = this.func_145895_l();
  
          if (iinventory == null)
-@@ -297,6 +298,8 @@
+         {
++            // CARPET-optimizedTileEntities: This purposely does not push to sleep to preserve chunk loading behavior
+             return false;
+         }
+         else
+@@ -203,6 +239,10 @@
+ 
+             if (this.func_174919_a(iinventory, enumfacing))
+             {
++                // CARPET-optimizedTileEntities: Push falls asleep if the container it would push into is full and
++                // is an actual tile entity (not a minecart). This is because minecarts do not cause comparator updates
++                // and would keep the hopper in a sleeping push state when leaving or emptying
++                this.pushSleeping = iinventory instanceof TileEntityLockable;
+                 return false;
+             }
+             else
+@@ -297,6 +337,13 @@
  
      public static boolean func_145891_a(IHopper p_145891_0_)
      {
 +        Boolean ret = net.minecraftforge.items.VanillaInventoryCodeHooks.extractHook(p_145891_0_);
-+        if (ret != null) return ret;
++        if (ret != null) {
++            if (p_145891_0_ instanceof TileEntityHopper) {
++                ((TileEntityHopper) p_145891_0_).pullSleeping = true;
++            }
++            return ret;
++        }
          IInventory iinventory = func_145884_b(p_145891_0_);
  
          if (iinventory != null)
-@@ -396,6 +399,12 @@
+@@ -305,6 +352,12 @@
+ 
+             if (func_174917_b(iinventory, enumfacing))
+             {
++                // CARPET-optimizedTileEntities: Pull falls asleep if the container it would pull from is empty and
++                // is an actual tile entity (not a minecart). This is because minecarts do not cause comparator updates
++                // and would be keeping the hopper in a sleeping pull state when leaving or filling up
++                if (iinventory instanceof TileEntityLockable && p_145891_0_ instanceof TileEntityHopper) {
++                    ((TileEntityHopper) p_145891_0_).pullSleeping = true;
++                }
+                 return false;
+             }
+ 
+@@ -333,6 +386,13 @@
+                     }
+                 }
+             }
++
++            // CARPET-optimizedTileEntities: There is a non-empty inventory above the hopper, but for some reason the
++            // hopper cannot suck items from it. Therefore the hopper pulling should sleep (if the inventory is not a
++            // minecart).
++            if (iinventory instanceof TileEntityLockable && p_145891_0_ instanceof TileEntityHopper) {
++                ((TileEntityHopper) p_145891_0_).pullSleeping = true;
++            }
+         }
+         else
+         {
+@@ -396,6 +456,12 @@
          }
      }
  
@@ -30,7 +153,7 @@
      public static ItemStack func_174918_a(IInventory p_174918_0_, IInventory p_174918_1_, ItemStack p_174918_2_, @Nullable EnumFacing p_174918_3_)
      {
          if (p_174918_1_ instanceof ISidedInventory && p_174918_3_ != null)
-@@ -516,9 +525,10 @@
+@@ -516,9 +582,10 @@
          int j = MathHelper.func_76128_c(p_145893_3_);
          int k = MathHelper.func_76128_c(p_145893_5_);
          BlockPos blockpos = new BlockPos(i, j, k);
@@ -43,10 +166,18 @@
          {
              TileEntity tileentity = p_145893_0_.func_175625_s(blockpos);
  
-@@ -611,4 +621,6 @@
+@@ -611,4 +678,14 @@
      {
          return this.field_145900_a;
      }
 +
 +    public long getLastUpdateTime() { return field_190578_g; } // Forge
++
++    // CARPET-optimizedTileEntities
++    @Override
++    public void wakeUp()
++    {
++        this.pullSleeping = false;
++        this.pushSleeping = false;
++    }
  }

@@ -1,6 +1,32 @@
 --- ../src-base/minecraft/net/minecraft/tileentity/TileEntityFurnace.java
 +++ ../src-work/minecraft/net/minecraft/tileentity/TileEntityFurnace.java
-@@ -121,9 +121,9 @@
+@@ -1,5 +1,6 @@
+ package net.minecraft.tileentity;
+ 
++import carpet.helpers.TileEntityOptimizer.ILazyTileEntity;
+ import net.minecraft.block.Block;
+ import net.minecraft.block.BlockFurnace;
+ import net.minecraft.block.material.Material;
+@@ -32,7 +33,7 @@
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
+ 
+-public class TileEntityFurnace extends TileEntityLockable implements ITickable, ISidedInventory
++public class TileEntityFurnace extends TileEntityLockable implements ITickable, ISidedInventory, ILazyTileEntity
+ {
+     private static final int[] field_145962_k = new int[] {0};
+     private static final int[] field_145959_l = new int[] {2, 1};
+@@ -44,6 +45,9 @@
+     private int field_174905_l;
+     private String field_145958_o;
+ 
++    // CARPET-optimizedTileEntities
++    private boolean isSleeping = false;
++
+     public int func_70302_i_()
+     {
+         return this.field_145957_n.size();
+@@ -121,9 +125,9 @@
          super.func_145839_a(p_145839_1_);
          this.field_145957_n = NonNullList.<ItemStack>func_191197_a(this.func_70302_i_(), ItemStack.field_190927_a);
          ItemStackHelper.func_191283_b(p_145839_1_, this.field_145957_n);
@@ -13,7 +39,7 @@
          this.field_145963_i = func_145952_a(this.field_145957_n.get(1));
  
          if (p_145839_1_.func_150297_b("CustomName", 8))
-@@ -135,9 +135,9 @@
+@@ -135,9 +139,9 @@
      public NBTTagCompound func_189515_b(NBTTagCompound p_189515_1_)
      {
          super.func_189515_b(p_189515_1_);
@@ -26,7 +52,18 @@
          ItemStackHelper.func_191282_a(p_189515_1_, this.field_145957_n);
  
          if (this.func_145818_k_())
-@@ -196,8 +196,8 @@
+@@ -166,6 +170,10 @@
+ 
+     public void func_73660_a()
+     {
++        if (this.field_145850_b.func_82736_K().func_82766_b("optimizeTileEntities") && this.isSleeping) {
++            return;
++        }
++
+         boolean flag = this.func_145950_i();
+         boolean flag1 = false;
+ 
+@@ -196,8 +204,8 @@
  
                              if (itemstack.func_190926_b())
                              {
@@ -37,7 +74,19 @@
                              }
                          }
                      }
-@@ -269,13 +269,13 @@
+@@ -230,6 +238,11 @@
+                 flag1 = true;
+                 BlockFurnace.func_176446_a(this.func_145950_i(), this.field_145850_b, this.field_174879_c);
+             }
++
++            // CARPET-optimizedTileEntities: Sleep if not burning
++            if (!this.func_145950_i()) {
++                this.isSleeping = true;
++            }
+         }
+ 
+         if (flag1)
+@@ -269,13 +282,13 @@
                  {
                      return false;
                  }
@@ -53,7 +102,7 @@
                  }
              }
          }
-@@ -295,7 +295,7 @@
+@@ -295,7 +308,7 @@
              }
              else if (itemstack2.func_77973_b() == itemstack1.func_77973_b())
              {
@@ -62,7 +111,7 @@
              }
  
              if (itemstack.func_77973_b() == Item.func_150898_a(Blocks.field_150360_v) && itemstack.func_77960_j() == 1 && !((ItemStack)this.field_145957_n.get(1)).func_190926_b() && ((ItemStack)this.field_145957_n.get(1)).func_77973_b() == Items.field_151133_ar)
-@@ -315,6 +315,8 @@
+@@ -315,6 +328,8 @@
          }
          else
          {
@@ -71,7 +120,7 @@
              Item item = p_145952_0_.func_77973_b();
  
              if (item == Item.func_150898_a(Blocks.field_150376_bx))
-@@ -530,4 +532,23 @@
+@@ -530,4 +545,30 @@
      {
          this.field_145957_n.clear();
      }
@@ -93,5 +142,12 @@
 +            else
 +                return (T) handlerSide;
 +        return super.getCapability(capability, facing);
++    }
++
++    // CARPET-optimizedTileEntities
++    @Override
++    public void wakeUp()
++    {
++        this.isSleeping = false;
 +    }
  }

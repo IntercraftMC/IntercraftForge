@@ -1,0 +1,12 @@
+--- ../src-base/minecraft/net/minecraft/tileentity/TileEntitySkull.java
++++ ../src-work/minecraft/net/minecraft/tileentity/TileEntitySkull.java
+@@ -82,7 +82,8 @@
+ 
+     public void func_73660_a()
+     {
+-        if (this.field_145908_a == 5)
++        // CARPET-optimizedTileEntities: Skull is only an animation, no need for server updates
++        if (this.field_145908_a == 5 && !(this.field_145850_b.func_82736_K().func_82766_b("optimizedTileEntities") && !this.field_145850_b.field_72995_K))
+         {
+             if (this.field_145850_b.func_175640_z(this.field_174879_c))
+             {

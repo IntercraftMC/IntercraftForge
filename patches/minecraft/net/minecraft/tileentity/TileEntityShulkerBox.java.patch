@@ -1,6 +1,73 @@
 --- ../src-base/minecraft/net/minecraft/tileentity/TileEntityShulkerBox.java
 +++ ../src-work/minecraft/net/minecraft/tileentity/TileEntityShulkerBox.java
-@@ -422,4 +422,9 @@
+@@ -2,6 +2,8 @@
+ 
+ import java.util.List;
+ import javax.annotation.Nullable;
++
++import carpet.helpers.TileEntityOptimizer.ILazyTileEntity;
+ import net.minecraft.block.Block;
+ import net.minecraft.block.BlockShulkerBox;
+ import net.minecraft.block.material.EnumPushReaction;
+@@ -30,7 +32,7 @@
+ import net.minecraftforge.fml.relauncher.Side;
+ import net.minecraftforge.fml.relauncher.SideOnly;
+ 
+-public class TileEntityShulkerBox extends TileEntityLockableLoot implements ITickable, ISidedInventory
++public class TileEntityShulkerBox extends TileEntityLockableLoot implements ITickable, ISidedInventory, ILazyTileEntity
+ {
+     private static final int[] field_190595_a = new int[27];
+     private NonNullList<ItemStack> field_190596_f;
+@@ -42,6 +44,9 @@
+     private EnumDyeColor field_190602_l;
+     private boolean field_190594_p;
+ 
++    // CARPET-optimizedTileEntities
++    private boolean isSleeping = false;
++
+     public TileEntityShulkerBox()
+     {
+         this((EnumDyeColor)null);
+@@ -56,6 +61,10 @@
+ 
+     public void func_73660_a()
+     {
++        if (this.field_145850_b.func_82736_K().func_82766_b("optimizeTileEntities") && this.isSleeping) {
++            return;
++        }
++
+         this.func_190583_o();
+ 
+         if (this.field_190599_i == TileEntityShulkerBox.AnimationStatus.OPENING || this.field_190599_i == TileEntityShulkerBox.AnimationStatus.CLOSING)
+@@ -71,6 +80,8 @@
+         switch (this.field_190599_i)
+         {
+             case CLOSED:
++                // CARPET-optimizedTileEntities: Sleep if opened
++                this.isSleeping = true;
+                 this.field_190600_j = 0.0F;
+                 break;
+             case OPENING:
+@@ -95,6 +106,8 @@
+ 
+                 break;
+             case OPENED:
++                // CARPET-optimizedTileEntities: Sleep if opened
++                this.isSleeping = true;
+                 this.field_190600_j = 1.0F;
+         }
+     }
+@@ -204,6 +217,9 @@
+ 
+     public boolean func_145842_c(int p_145842_1_, int p_145842_2_)
+     {
++        // CARPET-optimizedTileEntities: Skip the update if sleeping
++        this.isSleeping = false;
++
+         if (p_145842_1_ == 1)
+         {
+             this.field_190598_h = p_145842_2_;
+@@ -422,4 +438,16 @@
          OPENED,
          CLOSING;
      }
@@ -8,5 +75,12 @@
 +    protected net.minecraftforge.items.IItemHandler createUnSidedHandler()
 +    {
 +        return new net.minecraftforge.items.wrapper.SidedInvWrapper(this, EnumFacing.UP);
++    }
++
++    // CARPET-optimizedTileEntities
++    @Override
++    public void wakeUp()
++    {
++        this.isSleeping = false;
 +    }
  }

@@ -1,0 +1,63 @@
+--- ../src-base/minecraft/net/minecraft/tileentity/TileEntityEnderChest.java
++++ ../src-work/minecraft/net/minecraft/tileentity/TileEntityEnderChest.java
+@@ -1,20 +1,29 @@
+ package net.minecraft.tileentity;
+ 
++import carpet.helpers.TileEntityOptimizer.ILazyTileEntity;
+ import net.minecraft.entity.player.EntityPlayer;
+ import net.minecraft.init.Blocks;
+ import net.minecraft.init.SoundEvents;
+ import net.minecraft.util.ITickable;
+ import net.minecraft.util.SoundCategory;
+ 
+-public class TileEntityEnderChest extends TileEntity implements ITickable
++public class TileEntityEnderChest extends TileEntity implements ITickable, ILazyTileEntity
+ {
+     public float field_145972_a;
+     public float field_145975_i;
+     public int field_145973_j;
+     private int field_145974_k;
+ 
++    // CARPET-optimizedTileEntities
++    private boolean isSleeping = false;
++
+     public void func_73660_a()
+     {
++        // CARPET-optimizedTileEntities: Skip the rest of the update if sleeping
++        if (this.field_145850_b.func_82736_K().func_82766_b("optimizeTileEntities") && this.isSleeping) {
++            return;
++        }
++
+         if (++this.field_145974_k % 20 * 4 == 0)
+         {
+             this.field_145850_b.func_175641_c(this.field_174879_c, Blocks.field_150477_bB, 1, this.field_145973_j);
+@@ -65,10 +74,17 @@
+                 this.field_145972_a = 0.0F;
+             }
+         }
++        // CARPET-optimizedTileEntities: Go to sleep if no one is using the chest and it's not preforming an animation
++        else if (this.field_145973_j == 0) {
++            this.isSleeping = true;
++        }
+     }
+ 
+     public boolean func_145842_c(int p_145842_1_, int p_145842_2_)
+     {
++        // CARPET-optimizedTileEntities: Wake up if a player is using the Ender Chest
++        this.isSleeping = false;
++
+         if (p_145842_1_ == 1)
+         {
+             this.field_145973_j = p_145842_2_;
+@@ -109,4 +125,11 @@
+             return p_145971_1_.func_70092_e((double)this.field_174879_c.func_177958_n() + 0.5D, (double)this.field_174879_c.func_177956_o() + 0.5D, (double)this.field_174879_c.func_177952_p() + 0.5D) <= 64.0D;
+         }
+     }
++
++    // CARPET-optimizedTileEntities
++    @Override
++    public void wakeUp()
++    {
++        this.isSleeping = false;
++    }
+ }

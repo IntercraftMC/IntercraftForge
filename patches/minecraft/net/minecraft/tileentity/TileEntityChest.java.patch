@@ -1,6 +1,34 @@
 --- ../src-base/minecraft/net/minecraft/tileentity/TileEntityChest.java
 +++ ../src-work/minecraft/net/minecraft/tileentity/TileEntityChest.java
-@@ -116,6 +116,7 @@
+@@ -1,6 +1,8 @@
+ package net.minecraft.tileentity;
+ 
+ import javax.annotation.Nullable;
++
++import carpet.helpers.TileEntityOptimizer.ILazyTileEntity;
+ import net.minecraft.block.Block;
+ import net.minecraft.block.BlockChest;
+ import net.minecraft.entity.player.EntityPlayer;
+@@ -23,7 +25,7 @@
+ import net.minecraft.util.math.AxisAlignedBB;
+ import net.minecraft.util.math.BlockPos;
+ 
+-public class TileEntityChest extends TileEntityLockableLoot implements ITickable
++public class TileEntityChest extends TileEntityLockableLoot implements ITickable, ILazyTileEntity
+ {
+     private NonNullList<ItemStack> field_145985_p = NonNullList.<ItemStack>func_191197_a(27, ItemStack.field_190927_a);
+     public boolean field_145984_a;
+@@ -37,6 +39,9 @@
+     private int field_145983_q;
+     private BlockChest.Type field_145982_r;
+ 
++    // CARPET-optimizedTileEntities
++    private boolean isSleeping = false;
++
+     public TileEntityChest()
+     {
+     }
+@@ -116,6 +121,7 @@
      {
          super.func_145836_u();
          this.field_145984_a = false;
@@ -8,7 +36,7 @@
      }
  
      @SuppressWarnings("incomplete-switch")
-@@ -167,6 +168,7 @@
+@@ -167,6 +173,7 @@
      {
          if (!this.field_145984_a)
          {
@@ -16,7 +44,52 @@
              this.field_145984_a = true;
              this.field_145991_k = this.func_174911_a(EnumFacing.WEST);
              this.field_145990_j = this.func_174911_a(EnumFacing.EAST);
-@@ -349,6 +351,29 @@
+@@ -210,6 +217,11 @@
+ 
+     public void func_73660_a()
+     {
++        // CARPET-optimizedTileEntities: Skip the update if sleeping
++        if (this.field_145850_b.func_82736_K().func_82766_b("optimizedTileEntities") && this.isSleeping) {
++            return;
++        }
++
+         this.func_145979_i();
+         int i = this.field_174879_c.func_177958_n();
+         int j = this.field_174879_c.func_177956_o();
+@@ -235,6 +247,11 @@
+             }
+         }
+ 
++        // CARPET-optimizedTileEntities: If no players are using the chest, go to sleep
++        if (this.field_145987_o == 0) {
++            this.isSleeping = true;
++        }
++
+         this.field_145986_n = this.field_145989_m;
+         float f1 = 0.1F;
+ 
+@@ -258,6 +275,10 @@
+ 
+         if (this.field_145987_o == 0 && this.field_145989_m > 0.0F || this.field_145987_o > 0 && this.field_145989_m < 1.0F)
+         {
++            // CARPET-optimizedTileEntities: This is the closing animation.
++            // It is possible here that numPlayersUsing is 0, so make sure you don't sleep
++            this.isSleeping = false;
++
+             float f2 = this.field_145989_m;
+ 
+             if (this.field_145987_o > 0)
+@@ -303,6 +324,9 @@
+ 
+     public boolean func_145842_c(int p_145842_1_, int p_145842_2_)
+     {
++        // CARPET-optimizedTileEntities: Wake up the chest when a player uses it
++        this.isSleeping = false;
++
+         if (p_145842_1_ == 1)
+         {
+             this.field_145987_o = p_145842_2_;
+@@ -349,6 +373,29 @@
          }
      }
  
@@ -46,3 +119,15 @@
      public void func_145843_s()
      {
          super.func_145843_s();
+@@ -386,4 +433,11 @@
+     {
+         return this.field_145985_p;
+     }
++
++    // CARPET-optimizedTileEntities
++    @Override
++    public void wakeUp()
++    {
++        this.isSleeping = false;
++    }
+ }
