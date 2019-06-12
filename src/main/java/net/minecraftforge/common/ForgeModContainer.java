@@ -19,6 +19,7 @@
 
 package net.minecraftforge.common;
 
+import cubimod.cubitick.command.CommandTick;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.biome.Biome;
 import static net.minecraftforge.common.config.Configuration.CATEGORY_CLIENT;
@@ -548,6 +549,7 @@ public class ForgeModContainer extends DummyModContainer implements WorldAccessC
     {
         evt.registerServerCommand(new ForgeCommand());
         evt.registerServerCommand(new SpawnUtilsCommand());
+        evt.registerServerCommand(new CommandTick());
     }
 
     @Subscribe

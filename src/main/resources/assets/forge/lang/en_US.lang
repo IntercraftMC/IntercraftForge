@@ -37,11 +37,17 @@ commands.forge.heightmap.usage=Use /forge heightmap <fix|height>
 commands.tree_base.invalid_cmd=Invalid subcommand '%s'!
 commands.tree_base.invalid_cmd.list_subcommands=Invalid subcommand '%s'! Available subcommands: %s
 commands.tree_base.available_subcommands=Available SubCommands: %s
+
 commands.spawn_utils.usage=Use /spawn-utils <subcommand>
 commands.spawn_utils.mocking.usage=Use /spawn-utils mocking <true|false>
 commands.spawn_utils.mocking.invalid=Incorrect usage
 commands.spawn_utils.tracking.usage=Use /spawn-utils tracking <start|stop|report>
 commands.spawn_utils.rate.usage=Use /spawn-utils-rate <multiplier> [reset]
+
+commands.cubitick.usage=Change the tick rate of the game
+commands.cubitick.rate.usage=/tick rate [rate]
+commands.cubitick.sync.usage=/tick sync [true|false]
+
 forge.texture.preload.warning=Warning: Texture %s not preloaded, will cause render glitches!
 forge.client.shutdown.internal=Shutting down internal server...
 forge.update.newversion=New Forge version available: %s

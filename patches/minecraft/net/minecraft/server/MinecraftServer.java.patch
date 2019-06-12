@@ -1,6 +1,14 @@
 --- ../src-base/minecraft/net/minecraft/server/MinecraftServer.java
 +++ ../src-work/minecraft/net/minecraft/server/MinecraftServer.java
-@@ -84,6 +84,7 @@
+@@ -9,6 +9,7 @@
+ import com.mojang.authlib.GameProfileRepository;
+ import com.mojang.authlib.minecraft.MinecraftSessionService;
+ import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
++import cubimod.cubitick.Cubitick;
+ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.ByteBufOutputStream;
+ import io.netty.buffer.Unpooled;
+@@ -84,6 +85,7 @@
  import net.minecraft.world.storage.WorldInfo;
  import net.minecraftforge.fml.relauncher.Side;
  import net.minecraftforge.fml.relauncher.SideOnly;
@@ -8,7 +16,7 @@
  import org.apache.commons.lang3.Validate;
  import org.apache.logging.log4j.LogManager;
  import org.apache.logging.log4j.Logger;
-@@ -105,7 +106,7 @@
+@@ -105,7 +107,7 @@
      @SideOnly(Side.SERVER)
      private String field_71320_r;
      private int field_71319_s = -1;
@@ -17,7 +25,7 @@
      private PlayerList field_71318_t;
      private boolean field_71317_u = true;
      private boolean field_71316_v;
-@@ -123,7 +124,8 @@
+@@ -123,7 +125,8 @@
      private int field_71280_D;
      private int field_143008_E;
      public final long[] field_71311_j = new long[100];
@@ -27,7 +35,28 @@
      private KeyPair field_71292_I;
      private String field_71293_J;
      private String field_71294_K;
-@@ -222,8 +224,6 @@
+@@ -149,6 +152,10 @@
+     @SideOnly(Side.CLIENT)
+     private boolean field_184111_ab;
+ 
++    // Cubitick: msToTick = milliseconds until server ticks
++    public static long msToTick;
++    public static MinecraftServer currentInstance;
++
+     public MinecraftServer(File p_i47054_1_, Proxy p_i47054_2_, DataFixer p_i47054_3_, YggdrasilAuthenticationService p_i47054_4_, MinecraftSessionService p_i47054_5_, GameProfileRepository p_i47054_6_, PlayerProfileCache p_i47054_7_)
+     {
+         this.field_110456_c = p_i47054_2_;
+@@ -161,6 +168,9 @@
+         this.field_71321_q = this.func_175582_h();
+         this.field_71310_m = new AnvilSaveConverter(p_i47054_1_, p_i47054_3_);
+         this.field_184112_s = p_i47054_3_;
++
++        // Cubitick: Set the current instance
++        currentInstance = this;
+     }
+ 
+     public ServerCommandManager func_175582_h()
+@@ -222,8 +232,6 @@
      {
          this.func_71237_c(p_71247_1_);
          this.func_71192_d("menu.loadingLevel");
@@ -36,7 +65,7 @@
          ISaveHandler isavehandler = this.field_71310_m.func_75804_a(p_71247_1_, true);
          this.func_175584_a(this.func_71270_I(), isavehandler);
          WorldInfo worldinfo = isavehandler.func_75757_d();
-@@ -254,6 +254,7 @@
+@@ -254,6 +262,7 @@
              worldsettings = new WorldSettings(worldinfo);
          }
  
@@ -44,7 +73,7 @@
          for (int i = 0; i < this.field_71305_c.length; ++i)
          {
              int j = 0;
-@@ -293,8 +294,23 @@
+@@ -293,8 +302,23 @@
                  this.field_71305_c[i].func_72912_H().func_76060_a(this.func_71265_f());
              }
          }
@@ -69,7 +98,7 @@
          this.func_147139_a(this.func_147135_j());
          this.func_71222_d();
      }
-@@ -309,7 +325,7 @@
+@@ -309,7 +333,7 @@
          this.func_71192_d("menu.generatingTerrain");
          int j1 = 0;
          field_147145_h.info("Preparing start region for level 0");
@@ -78,7 +107,7 @@
          BlockPos blockpos = worldserver.func_175694_M();
          long k1 = func_130071_aq();
  
-@@ -434,15 +450,24 @@
+@@ -434,15 +458,24 @@
              {
                  if (worldserver1 != null)
                  {
@@ -103,7 +132,7 @@
      }
  
      public boolean func_71278_l()
-@@ -461,6 +486,7 @@
+@@ -461,6 +494,7 @@
          {
              if (this.func_71197_b())
              {
@@ -111,8 +140,67 @@
                  this.field_175591_ab = func_130071_aq();
                  long i = 0L;
                  this.field_147147_p.func_151315_a(new TextComponentString(this.field_71286_C));
-@@ -505,12 +531,20 @@
-                     Thread.sleep(Math.max(1L, 50L - i));
+@@ -472,10 +506,11 @@
+                     long k = func_130071_aq();
+                     long j = k - this.field_175591_ab;
+ 
+-                    if (j > 2000L && this.field_175591_ab - this.field_71299_R >= 15000L)
++                    // Cubitick: adjusted some timings
++                    if (j > 100 * Cubitick.getTickMs() && this.field_175591_ab - this.field_71299_R >= 15000L)
+                     {
+                         field_147145_h.warn("Can't keep up! Did the system time change, or is the server overloaded? Running {}ms behind, skipping {} tick(s)", Long.valueOf(j), Long.valueOf(j / 50L));
+-                        j = 2000L;
++                        j = (long)(100*Cubitick.getTickMs());
+                         this.field_71299_R = this.field_175591_ab;
+                     }
+ 
+@@ -495,22 +530,62 @@
+                     }
+                     else
+                     {
+-                        while (i > 50L)
++                        // Cubitick
++                        while (i > Cubitick.getTickMs())
+                         {
+-                            i -= 50L;
++                            i -= Cubitick.getTickMs();
+                             this.func_71217_p();
+                         }
+                     }
+ 
+-                    Thread.sleep(Math.max(1L, 50L - i));
++                    // Cubitick
++                    // Thread.sleep(Math.max(1L, 50L - i));
++
++                    msToTick = (long)(Cubitick.getTickMs() - i);
++                    if(msToTick <= 0L) {
++                        if(Cubitick.tickrateWorld > 20.0 && !Cubitick.syncTick) msToTick = 0L;
++                        else msToTick = 1L;
++                    }
++                    for(long ms = 0; ms < msToTick; ms++) {
++                        Thread.sleep(1L);
++                        if(!Cubitick.syncTick) {
++                        }
++                    }
++
++                    // Cubitick: process the chat (for low tickrates where we can't wait for the tick to finish)
++                    if(!Cubitick.syncTick && msToTick < 0)
++                    {
++                        synchronized (this.field_175589_i)
++                        {
++                            while (!this.field_175589_i.isEmpty())
++                            {
++                                try
++                                {
++                                    ((FutureTask)this.field_175589_i.poll()).run();
++                                }
++                                catch (Throwable var9)
++                                {
++                                    field_147145_h.fatal(var9);
++                                }
++                            }
++                        }
++                    }
                      this.field_71296_Q = true;
                  }
 +                net.minecraftforge.fml.common.FMLCommonHandler.instance().handleServerStopping();
@@ -132,7 +220,7 @@
          catch (Throwable throwable1)
          {
              field_147145_h.error("Encountered an unexpected exception", throwable1);
-@@ -536,13 +570,13 @@
+@@ -536,13 +611,13 @@
                  field_147145_h.error("We were unable to save this crash report to disk.");
              }
  
@@ -147,7 +235,7 @@
                  this.func_71260_j();
              }
              catch (Throwable throwable)
-@@ -551,6 +585,8 @@
+@@ -551,6 +626,8 @@
              }
              finally
              {
@@ -156,7 +244,7 @@
                  this.func_71240_o();
              }
          }
-@@ -577,6 +613,7 @@
+@@ -577,6 +654,7 @@
                  ImageIO.write(bufferedimage, "PNG", new ByteBufOutputStream(bytebuf));
                  ByteBuf bytebuf1 = Base64.encode(bytebuf);
                  p_184107_1_.func_151320_a("data:image/png;base64," + bytebuf1.toString(StandardCharsets.UTF_8));
@@ -164,7 +252,7 @@
              }
              catch (Exception exception)
              {
-@@ -618,6 +655,7 @@
+@@ -618,6 +696,7 @@
      public void func_71217_p()
      {
          long i = System.nanoTime();
@@ -172,7 +260,7 @@
          ++this.field_71315_w;
  
          if (this.field_71295_T)
-@@ -644,6 +682,7 @@
+@@ -644,6 +723,7 @@
  
              Collections.shuffle(Arrays.asList(agameprofile));
              this.field_147147_p.func_151318_b().func_151330_a(agameprofile);
@@ -180,7 +268,7 @@
          }
  
          if (this.field_71315_w % 900 == 0)
-@@ -671,6 +710,7 @@
+@@ -671,6 +751,7 @@
  
          this.field_71304_b.func_76319_b();
          this.field_71304_b.func_76319_b();
@@ -188,7 +276,7 @@
      }
  
      public void func_71190_q()
-@@ -686,14 +726,18 @@
+@@ -686,14 +767,18 @@
          }
  
          this.field_71304_b.func_76318_c("levels");
@@ -210,7 +298,7 @@
                  this.field_71304_b.func_194340_a(() ->
                  {
                      return worldserver.func_72912_H().func_76065_j();
-@@ -702,11 +746,12 @@
+@@ -702,11 +787,12 @@
                  if (this.field_71315_w % 20 == 0)
                  {
                      this.field_71304_b.func_76320_a("timeSync");
@@ -224,7 +312,7 @@
  
                  try
                  {
-@@ -730,6 +775,7 @@
+@@ -730,6 +816,7 @@
                      throw new ReportedException(crashreport1);
                  }
  
@@ -232,7 +320,7 @@
                  this.field_71304_b.func_76319_b();
                  this.field_71304_b.func_76320_a("tracker");
                  worldserver.func_73039_n().func_72788_a();
-@@ -737,9 +783,11 @@
+@@ -737,9 +824,11 @@
                  this.field_71304_b.func_76319_b();
              }
  
@@ -245,7 +333,7 @@
          this.field_71304_b.func_76318_c("connection");
          this.func_147137_ag().func_151269_c();
          this.field_71304_b.func_76318_c("players");
-@@ -763,7 +811,8 @@
+@@ -763,7 +852,8 @@
  
      public void func_71256_s()
      {
@@ -255,7 +343,7 @@
          this.field_175590_aa.start();
      }
  
-@@ -779,14 +828,13 @@
+@@ -779,14 +869,13 @@
  
      public WorldServer func_71218_a(int p_71218_1_)
      {
@@ -275,7 +363,7 @@
      }
  
      public String func_71249_w()
-@@ -816,7 +864,7 @@
+@@ -816,7 +905,7 @@
  
      public String getServerModName()
      {
@@ -284,7 +372,16 @@
      }
  
      public CrashReport func_71230_b(CrashReport p_71230_1_)
-@@ -1411,6 +1459,16 @@
+@@ -1308,7 +1397,7 @@
+ 
+     public MinecraftServer func_184102_h()
+     {
+-        return this;
++        return currentInstance = this;
+     }
+ 
+     public int func_175580_aG()
+@@ -1411,6 +1500,16 @@
      @SideOnly(Side.SERVER)
      public static void main(String[] p_main_0_)
      {
@@ -301,7 +398,7 @@
          Bootstrap.func_151354_b();
  
          try
-@@ -1598,4 +1656,9 @@
+@@ -1598,4 +1697,23 @@
      {
          return this.field_175590_aa;
      }
@@ -309,5 +406,19 @@
 +    public DataFixer getDataFixer()
 +    {
 +        return this.field_184112_s;
++    }
++
++    /**
++     * Cubitick: Used in the GuiChat class to interrupt the server's sleep
++     */
++    public static void interruptTickSleep()
++    {
++        if (currentInstance == null) {
++            field_147145_h.warn("[Cubitick] Warning: Tried to interrupt server tick sleep, but server is null.");
++            return;
++        }
++
++        currentInstance.field_175591_ab = currentInstance.func_130071_aq();
++        currentInstance.msToTick = -1;
 +    }
  }
