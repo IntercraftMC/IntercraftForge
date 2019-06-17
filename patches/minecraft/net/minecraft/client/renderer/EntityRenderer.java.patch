@@ -112,58 +112,6 @@
                      if (this.field_78531_r.field_71439_g.func_70644_a(MobEffects.field_76439_r))
                      {
                          float f15 = this.func_180438_a(this.field_78531_r.field_71439_g, p_78472_1_);
-@@ -974,7 +984,7 @@
-         return i > 200 ? 1.0F : 0.7F + MathHelper.func_76126_a(((float)i - p_180438_2_) * (float)Math.PI * 0.2F) * 0.3F;
-     }
- 
--    public void func_181560_a(float p_181560_1_, long p_181560_2_)
-+    public void updateCameraAndRender(float partialTicks, float worldPartialTicks, long nanoTime)
-     {
-         boolean flag = Display.isActive();
- 
-@@ -1018,8 +1028,8 @@
-             {
-                 this.field_78496_H += f2;
-                 this.field_78497_I += f3;
--                float f4 = p_181560_1_ - this.field_78492_L;
--                this.field_78492_L = p_181560_1_;
-+                float f4 = worldPartialTicks - this.field_78492_L;
-+                this.field_78492_L = worldPartialTicks;
-                 f2 = this.field_78498_J * f4;
-                 f3 = this.field_78499_K * f4;
-                 this.field_78531_r.field_71439_g.func_70082_c(f2, f3 * (float)i);
-@@ -1049,9 +1059,9 @@
-                 this.field_78531_r.field_71424_I.func_76320_a("level");
-                 int j = Math.min(Minecraft.func_175610_ah(), i2);
-                 j = Math.max(j, 60);
--                long k = System.nanoTime() - p_181560_2_;
-+                long k = System.nanoTime() - nanoTime;
-                 long l = Math.max((long)(1000000000 / j / 4) - k, 0L);
--                this.func_78471_a(p_181560_1_, System.nanoTime() + l);
-+                this.renderWorld(partialTicks, worldPartialTicks, System.nanoTime() + l);
- 
-                 if (this.field_78531_r.func_71356_B() && this.field_184374_E < Minecraft.func_71386_F() - 1000L)
-                 {
-@@ -1072,7 +1082,7 @@
-                         GlStateManager.func_179128_n(5890);
-                         GlStateManager.func_179094_E();
-                         GlStateManager.func_179096_D();
--                        this.field_147707_d.func_148018_a(p_181560_1_);
-+                        this.field_147707_d.func_148018_a(worldPartialTicks);
-                         GlStateManager.func_179121_F();
-                     }
- 
-@@ -1086,8 +1096,8 @@
-                 {
-                     GlStateManager.func_179092_a(516, 0.1F);
-                     this.func_78478_c();
--                    this.func_190563_a(i1, j1, p_181560_1_);
--                    this.field_78531_r.field_71456_v.func_175180_a(p_181560_1_);
-+                    this.func_190563_a(i1, j1, worldPartialTicks);
-+                    this.field_78531_r.field_71456_v.func_175180_a(worldPartialTicks);
-                 }
- 
-                 this.field_78531_r.field_71424_I.func_76319_b();
 @@ -1101,6 +1111,10 @@
                  GlStateManager.func_179096_D();
                  this.func_78478_c();
@@ -193,25 +141,7 @@
                      }
                      else
                      {
-@@ -1217,34 +1231,54 @@
-         }
-     }
- 
--    public void func_78471_a(float p_78471_1_, long p_78471_2_)
-+    public void renderWorld(float partialTicks, float worldPartialTicks, long finishTimeNano)
-     {
--        this.func_78472_g(p_78471_1_);
-+        this.func_78472_g(worldPartialTicks);
- 
-         if (this.field_78531_r.func_175606_aa() == null)
-         {
-             this.field_78531_r.func_175607_a(this.field_78531_r.field_71439_g);
-         }
- 
--        this.func_78473_a(p_78471_1_);
-+        this.func_78473_a(worldPartialTicks);
-         GlStateManager.func_179126_j();
-         GlStateManager.func_179141_d();
+@@ -1232,19 +1246,51 @@
          GlStateManager.func_179092_a(516, 0.5F);
          this.field_78531_r.field_71424_I.func_76320_a("center");
  
@@ -229,17 +159,25 @@
              GlStateManager.func_179135_a(false, true, true, false);
 -            this.func_175068_a(0, p_78471_1_, p_78471_2_);
 +            if (Cubitick.syncTick) {
-+                this.func_175068_a(0, worldPartialTicks, finishTimeNano);
++                this.func_175068_a(0, p_78471_1_, p_78471_2_);
 +            } else {
-+                this.renderWorldPassAsync(0, partialTicks, worldPartialTicks, finishTimeNano);
++                if (field_78531_r.func_147113_T()) {
++                    this.renderWorldPassAsync(0, field_78531_r.field_193996_ah, field_78531_r.renderWorldPartialTicksPaused, p_78471_2_);
++                } else {
++                    this.renderWorldPassAsync(0, field_78531_r.field_71428_T.field_194147_b, field_78531_r.timerWorld.field_194147_b, p_78471_2_);
++                }
 +            }
              field_78515_b = 1;
              GlStateManager.func_179135_a(true, false, false, false);
 -            this.func_175068_a(1, p_78471_1_, p_78471_2_);
 +            if (Cubitick.syncTick) {
-+                this.func_175068_a(1, worldPartialTicks, finishTimeNano);
++                this.func_175068_a(1, p_78471_1_, p_78471_2_);
 +            } else {
-+                this.renderWorldPassAsync(1, partialTicks, worldPartialTicks, finishTimeNano);
++                if (field_78531_r.func_147113_T()) {
++                    this.renderWorldPassAsync(1, field_78531_r.field_193996_ah, field_78531_r.renderWorldPartialTicksPaused, p_78471_2_);
++                } else {
++                    this.renderWorldPassAsync(1, field_78531_r.field_71428_T.field_194147_b, field_78531_r.timerWorld.field_194147_b, p_78471_2_);
++                }
 +            }
              GlStateManager.func_179135_a(true, true, true, false);
          }
@@ -247,14 +185,18 @@
          {
 -            this.func_175068_a(2, p_78471_1_, p_78471_2_);
 +            if (Cubitick.syncTick) {
-+                this.func_175068_a(2, worldPartialTicks, finishTimeNano);
++                this.func_175068_a(2, p_78471_1_, p_78471_2_);
 +            } else {
-+                this.renderWorldPassAsync(2, partialTicks, worldPartialTicks, finishTimeNano);
++                if (field_78531_r.func_147113_T()) {
++                    this.renderWorldPassAsync(2, field_78531_r.field_193996_ah, field_78531_r.renderWorldPartialTicksPaused, p_78471_2_);
++                } else {
++                    this.renderWorldPassAsync(2, field_78531_r.field_71428_T.field_194147_b, field_78531_r.timerWorld.field_194147_b, p_78471_2_);
++                }
 +            }
          }
  
          this.field_78531_r.field_71424_I.func_76319_b();
-@@ -1262,7 +1296,7 @@
+@@ -1262,7 +1308,7 @@
          GlStateManager.func_179086_m(16640);
          this.field_78531_r.field_71424_I.func_76318_c("camera");
          this.func_78479_a(p_175068_2_, p_175068_1_);
@@ -263,7 +205,7 @@
          this.field_78531_r.field_71424_I.func_76318_c("frustum");
          ClippingHelperImpl.func_78558_a();
          this.field_78531_r.field_71424_I.func_76318_c("culling");
-@@ -1315,7 +1349,9 @@
+@@ -1315,7 +1361,9 @@
          GlStateManager.func_179118_c();
          renderglobal.func_174977_a(BlockRenderLayer.SOLID, (double)p_175068_2_, p_175068_1_, entity);
          GlStateManager.func_179141_d();
@@ -273,7 +215,7 @@
          this.field_78531_r.func_110434_K().func_110581_b(TextureMap.field_110575_b).func_174936_b(false, false);
          renderglobal.func_174977_a(BlockRenderLayer.CUTOUT, (double)p_175068_2_, p_175068_1_, entity);
          this.field_78531_r.func_110434_K().func_110581_b(TextureMap.field_110575_b).func_174935_a();
-@@ -1329,7 +1365,9 @@
+@@ -1329,7 +1377,9 @@
              GlStateManager.func_179094_E();
              RenderHelper.func_74519_b();
              this.field_78531_r.field_71424_I.func_76318_c("entities");
@@ -283,7 +225,7 @@
              RenderHelper.func_74518_a();
              this.func_175072_h();
          }
-@@ -1342,6 +1380,7 @@
+@@ -1342,6 +1392,7 @@
              EntityPlayer entityplayer = (EntityPlayer)entity;
              GlStateManager.func_179118_c();
              this.field_78531_r.field_71424_I.func_76318_c("outline");
@@ -291,7 +233,7 @@
              renderglobal.func_72731_b(entityplayer, this.field_78531_r.field_71476_x, 0, p_175068_2_);
              GlStateManager.func_179141_d();
          }
-@@ -1388,6 +1427,17 @@
+@@ -1388,6 +1439,17 @@
          GlStateManager.func_179103_j(7425);
          this.field_78531_r.field_71424_I.func_76318_c("translucent");
          renderglobal.func_174977_a(BlockRenderLayer.TRANSLUCENT, (double)p_175068_2_, p_175068_1_, entity);
@@ -309,7 +251,7 @@
          GlStateManager.func_179103_j(7424);
          GlStateManager.func_179132_a(true);
          GlStateManager.func_179089_o();
-@@ -1400,6 +1450,9 @@
+@@ -1400,6 +1462,9 @@
              this.func_180437_a(renderglobal, p_175068_2_, p_175068_1_, d0, d1, d2);
          }
  
@@ -319,7 +261,7 @@
          this.field_78531_r.field_71424_I.func_76318_c("hand");
  
          if (this.field_175074_C)
-@@ -1515,6 +1568,13 @@
+@@ -1515,6 +1580,13 @@
  
      protected void func_78474_d(float p_78474_1_)
      {
@@ -333,7 +275,7 @@
          float f = this.field_78531_r.field_71441_e.func_72867_j(p_78474_1_);
  
          if (f > 0.0F)
-@@ -1749,30 +1809,17 @@
+@@ -1749,30 +1821,17 @@
              this.field_175082_R = (float)vec3d3.field_72448_b;
              this.field_175081_S = (float)vec3d3.field_72449_c;
          }
@@ -373,7 +315,7 @@
  
          float f13 = this.field_78535_ad + (this.field_78539_ae - this.field_78535_ad) * p_78466_1_;
          this.field_175080_Q *= f13;
-@@ -1830,6 +1877,9 @@
+@@ -1830,6 +1889,9 @@
                  f6 = 1.0F / this.field_175081_S;
              }
  
@@ -383,7 +325,7 @@
              this.field_175080_Q = this.field_175080_Q * (1.0F - f15) + this.field_175080_Q * f6 * f15;
              this.field_175082_R = this.field_175082_R * (1.0F - f15) + this.field_175082_R * f6 * f15;
              this.field_175081_S = this.field_175081_S * (1.0F - f15) + this.field_175081_S * f6 * f15;
-@@ -1845,6 +1895,13 @@
+@@ -1845,6 +1907,13 @@
              this.field_175081_S = f7;
          }
  
@@ -397,7 +339,7 @@
          GlStateManager.func_179082_a(this.field_175080_Q, this.field_175082_R, this.field_175081_S, 0.0F);
      }
  
-@@ -1855,7 +1912,9 @@
+@@ -1855,7 +1924,9 @@
          GlStateManager.func_187432_a(0.0F, -1.0F, 0.0F);
          GlStateManager.func_179131_c(1.0F, 1.0F, 1.0F, 1.0F);
          IBlockState iblockstate = ActiveRenderInfo.func_186703_a(this.field_78531_r.field_71441_e, entity, p_78468_2_);
@@ -408,7 +350,7 @@
          if (entity instanceof EntityLivingBase && ((EntityLivingBase)entity).func_70644_a(MobEffects.field_76440_q))
          {
              float f1 = 5.0F;
-@@ -1940,6 +1999,7 @@
+@@ -1940,6 +2011,7 @@
                  GlStateManager.func_179102_b(f * 0.05F);
                  GlStateManager.func_179153_c(Math.min(f, 192.0F) * 0.5F);
              }
@@ -416,7 +358,7 @@
          }
  
          GlStateManager.func_179142_g();
-@@ -2062,4 +2122,214 @@
+@@ -2062,4 +2134,214 @@
              GlStateManager.func_179097_i();
          }
      }
