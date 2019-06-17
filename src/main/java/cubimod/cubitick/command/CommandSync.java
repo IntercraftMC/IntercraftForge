@@ -36,9 +36,11 @@ public class CommandSync extends CommandBase
         } else {
             if (args[0].equals("true") || args[0].equals("on")) {
                 Cubitick.syncTick = true;
+                Cubitick.changeClientTickrate();
                 notify(sender, "Tickrate is now synchronised");
             } else if (args[0].equals("false") || args[0].equals("off")) {
                 Cubitick.syncTick = false;
+                Cubitick.changeClientTickrate();
                 notify(sender, "Tickrate is now desynchronised");
             } else {
                 notify(sender, "Tickrate synchronisation can only be true/on or false/off");

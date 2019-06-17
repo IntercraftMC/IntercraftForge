@@ -781,7 +781,7 @@
      public boolean func_189648_am()
      {
          return this.field_71439_g != null && this.field_71439_g.func_175140_cp() || this.field_71474_y.field_178879_v;
-@@ -3342,4 +3305,274 @@
+@@ -3342,4 +3305,277 @@
      {
          return this.field_193035_aW;
      }
@@ -986,7 +986,10 @@
 +                    this.field_71441_e.func_175702_c(this.field_71441_e.func_175658_ac() - 1);
 +                }
 +
-+                this.field_71441_e.field_72996_f.remove(this.field_71439_g);
++                // Sometimes the player is added to the list twice (when going through portals).
++                // Not exactly sure why this happens, I suppose it comes from the desynchronization of the server...
++                // A little hack fix for now!
++                while (this.field_71441_e.field_72996_f.remove(this.field_71439_g)) {}
 +                this.field_71441_e.func_72939_s();
 +                this.field_71441_e.field_72996_f.add(this.field_71439_g);
 +            }
